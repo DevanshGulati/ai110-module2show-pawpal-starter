@@ -7,21 +7,25 @@ classDiagram
         +dict preferences
         +add_pet(pet) void
         +add_task(pet, task) void
+        +all_tasks() list~Task~
     }
 
     class Pet {
         +str name
         +str species
-        +list~CareTask~ tasks
+        +list~Task~ tasks
         +add_task(task) void
         +remove_task(task) void
     }
 
-    class CareTask {
-        +str title
+    class Task {
+        +str description
         +int duration_minutes
         +str priority
-        +str preferred_time
+        +str time
+        +str frequency
+        +bool completed
+        +mark_complete() void
         +priority_score() int
     }
 
@@ -32,7 +36,15 @@ classDiagram
         +explain(plan) str
     }
 
+    class ScheduledItem {
+        +Task task
+        +str start_time
+        +end_minutes() int
+        +end_time() str
+    }
+
     Owner "1" --> "*" Pet : has
-    Pet "1" --> "*" CareTask : owns
-    Scheduler ..> CareTask : schedules
-    Scheduler ..> Pet : plans for
+    Pet "1" --> "*" Task : owns
+    Scheduler ..> Task : schedules
+    Scheduler ..> ScheduledItem : produces
+    ScheduledItem "*" --> "1" Task : wraps

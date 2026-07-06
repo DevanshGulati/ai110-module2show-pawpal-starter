@@ -2,15 +2,32 @@
 
 ## 1. System Design
 
+**Core user actions**
+
+Based on the PawPal+ scenario, a user should be able to perform these three core actions:
+
+1. Add a pet and owner profile: The user enters basic owner information and creates a pet (for example, name and type/breed) so the assistant knows who it is planning care for.
+
+2. Add and edit care tasks for a pet: The user records care tasks such as walks, feeding, meds, enrichment, and grooming, giving each task at least a duration and a priority (and optionally preferences like preferred time). They can update or remove tasks as needs change.
+
+3. Generate and view a daily care plan: The user asks PawPal+ to build a daily schedule that respects their constraints (available time, priority, preferences), then views the resulting plan clearly, ideally with an explanation of why tasks were chosen or ordered the way they were.
+
 **a. Initial design**
 
-- Briefly describe your initial UML design.
-- What classes did you include, and what responsibilities did you assign to each?
+My initial design used four classes, split by responsibility:
+
+- **Owner** — holds the person's `name`, a list of their `pets`, and scheduling `preferences` (e.g. available minutes per day). It's the top-level entry point (`add_pet`, `add_task`) that ties everything together.
+- **Pet** — a `Task` container with `name` and `species`; responsible for managing its own task list (`add_task`, `remove_task`).
+- **Task** — a single unit of care (`description`, `duration_minutes`, `priority`, `time`, `frequency`, `completed`). It knows how urgent it is via `priority_score()` and can be marked done via `mark_complete()`.
+- **Scheduler** — the behavior/logic class. It doesn't store tasks; it takes them plus constraints (`available_minutes`, `start_time`) and produces an ordered daily plan (`build_plan`) and a justification (`explain`).
+
+I deliberately separated the *data* classes (Owner/Pet/Task, as dataclasses) from the *behavior* class (Scheduler) so the scheduling algorithm can change without touching the data model.
 
 **b. Design changes**
 
-- Did your design change during implementation?
-- If yes, describe at least one change and why you made it.
+Yes. When I asked my AI assistant to review the skeleton for missing relationships, it flagged that `Scheduler.build_plan()` and `explain()` both operate on a "plan," and the UML annotated the return type as `list~ScheduledItem~`, but no `ScheduledItem` class actually existed — a plan was just an untyped `list`. That left nowhere to record *when* a task was placed, which `explain()` needs.
+
+I added a **`ScheduledItem`** dataclass that wraps a `Task` with a concrete `start_time` (plus an `end_minutes` helper), and updated both `Scheduler` method signatures and the UML to use it. This makes the plan self-describing: each item carries its task and time, so `explain()` can report the schedule without recomputing it.
 
 ---
 

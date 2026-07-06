@@ -101,6 +101,41 @@ $ python -m pytest -q
 
 ## 📐 Smarter Scheduling
 
+PawPal+ goes beyond a flat task list with four scheduling behaviors. Each is
+implemented in the logic layer ([`pawpal_system.py`](pawpal_system.py)):
+
+### Sorting — `Scheduler.sort_by_time()`
+
+Orders tasks by their preferred `HH:MM` start time. Because `HH:MM` strings are
+zero-padded, a plain string sort is already chronological; a `sorted()` key of
+`(t.time is None, t.time or "")` pushes untimed tasks to the end. The daily plan
+builder (`Scheduler.build_plan()`) additionally sorts by priority (high first),
+then shortest duration, so the most important quick wins are placed first.
+
+### Filtering — `Scheduler.filter_by_status()` and `Owner.tasks_for_pet()`
+
+- `Scheduler.filter_by_status(tasks, completed=...)` returns only the tasks whose
+  completion flag matches, e.g. to show just the outstanding to-dos.
+- `Owner.tasks_for_pet(pet_name)` returns the tasks belonging to a single pet.
+- `Scheduler.build_plan()` also implicitly filters out tasks that don't fit the
+  remaining time budget.
+
+### Conflict detection — `Scheduler.detect_conflicts()`
+
+A lightweight check that groups tasks by their exact start time and returns a
+list of human-readable warning strings (e.g. `"Conflict at 08:00: Meds, Walk"`)
+when two or more tasks share the same slot. It returns warnings rather than
+raising, so the program never crashes. (It flags exact-time matches only, not
+overlapping durations — see the tradeoff noted in [`reflection.md`](reflection.md).)
+
+### Recurring tasks — `Task.next_occurrence()` and `Scheduler.complete_task()`
+
+When a `daily` or `weekly` task is completed via `Scheduler.complete_task(pet, task)`,
+the scheduler marks it done and calls `Task.next_occurrence()`, which uses
+Python's `timedelta` to build a fresh, uncompleted copy due on the next date
+(today + 1 day for daily, + 7 days for weekly) and adds it to the pet. One-off
+tasks (`frequency="once"`) return `None` and are not rescheduled.
+
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
 | Task sorting | `Scheduler.sort_by_time()`, `Scheduler.build_plan()` | Sort by preferred `HH:MM` time (untimed last); the plan itself sorts by priority (high first), then shortest duration. |

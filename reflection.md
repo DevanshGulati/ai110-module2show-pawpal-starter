@@ -51,13 +51,21 @@ This is a reasonable tradeoff for this scenario: exact-match detection is trivia
 
 **a. How you used AI**
 
-- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
-- What kinds of prompts or questions were most helpful?
+I used AI across every phase: brainstorming the initial class list, generating the UML skeleton, fleshing out method bodies, drafting tests, and polishing docs. The most effective features were **agent/edit mode** (making coordinated edits across `pawpal_system.py`, `main.py`, and the tests at once — especially for the recurrence feature that touched `Task` and `Scheduler` together) and **inline chat on a specific method** for targeted questions like "how do I sort `HH:MM` strings with a `sorted()` key?".
+
+The most helpful prompts were **specific and scoped**: "how should the `Scheduler` retrieve all tasks from the `Owner`'s pets?" produced a clean `Owner.all_tasks()` method, and "suggest a *lightweight* conflict-detection strategy that returns a warning instead of crashing" kept the AI from over-engineering. Open-ended "make this better" prompts were the least useful.
+
+**Which AI features were most effective:** agent mode for multi-file changes; inline chat for one-method questions; and using the AI as a *reviewer* ("what relationships are missing from this skeleton?") which is how the `ScheduledItem` class got added.
+
+**Using separate chat sessions** for planning vs. implementation vs. testing kept context clean — the testing session focused purely on edge cases (empty pet, duplicate times) without dragging along implementation details, and the algorithm-planning session didn't pollute the core-logic work. It made each conversation shorter and more on-topic.
 
 **b. Judgment and verification**
 
-- Describe one moment where you did not accept an AI suggestion as-is.
-- How did you evaluate or verify what the AI suggested?
+- **A suggestion I modified:** when asked to simplify the `sort_by_time` key, the AI offered a terser expression, but I kept the explicit `(t.time is None, t.time or "")` tuple because it's easier for a human to read and makes the "untimed goes last" rule obvious. I chose readability over cleverness.
+- **A suggestion I rejected:** I declined to build full interval-overlap conflict detection early on and kept exact-time matching instead (documented in §2b), because the extra complexity wasn't justified for a first pass.
+- **How I verified:** I ran `python main.py` after each change to watch real output, and I wrote tests (11 total) that pin down the behavior — e.g. asserting a completed daily task's follow-up is due exactly `date.today() + timedelta(days=1)`. If the AI's code and my test disagreed, I traced which one was wrong rather than trusting the generated code by default.
+
+**As the "lead architect,"** my job was to own the design decisions the AI can't make for me: which constraints matter most (priority over duration), how much complexity is warranted (lightweight conflict detection), and what "clean" means for this codebase (separating data classes from the `Scheduler`'s behavior). The AI was fast at producing options and boilerplate, but I had to be the one to reject, scope, and verify — the quality came from the combination, not from either side alone.
 
 ---
 
@@ -65,13 +73,20 @@ This is a reasonable tradeoff for this scenario: exact-match detection is trivia
 
 **a. What you tested**
 
-- What behaviors did you test?
-- Why were these tests important?
+I wrote 11 tests in `tests/test_pawpal.py` covering both happy paths and edge cases:
+
+- **Task basics** — `mark_complete()` flips the flag; adding a task grows the pet's list.
+- **Sorting** — `sort_by_time()` returns chronological order with untimed tasks last.
+- **Filtering** — `filter_by_status()` returns only matching tasks.
+- **Conflict detection** — flags exact same-time clashes; returns empty when times are unique.
+- **Recurrence** — a completed daily task rolls to tomorrow, a weekly task to +7 days, and a one-off task is not rescheduled.
+- **Edge cases** — a pet with no tasks yields an empty plan (no crash); `build_plan()` drops tasks that exceed the time budget.
+
+These mattered because sorting, recurrence, and conflict detection are the "smart" behaviors most likely to break silently — a wrong `timedelta` or a bad sort key wouldn't crash, it would just quietly produce a wrong plan, so tests are the only reliable guard.
 
 **b. Confidence**
 
-- How confident are you that your scheduler works correctly?
-- What edge cases would you test next if you had more time?
+I'm about **4/5** confident. Every core behavior is exercised by a passing test, including the trickier recurrence math and the empty/over-budget edge cases. What holds me back from full confidence: conflict detection only catches exact-time matches (not overlapping durations), and I haven't tested odd inputs like malformed time strings (`"25:99"`), negative or zero durations, or recurrence across month/year boundaries. Those are what I'd test next.
 
 ---
 
@@ -79,12 +94,12 @@ This is a reasonable tradeoff for this scenario: exact-match detection is trivia
 
 **a. What went well**
 
-- What part of this project are you most satisfied with?
+I'm most satisfied with the clean separation between the **data classes** (`Owner`/`Pet`/`Task` as dataclasses) and the **`Scheduler`** behavior class. It made every later feature — sorting, filtering, recurrence, conflicts — a small, self-contained method that was easy to test in isolation, and it kept the Streamlit UI thin (it just calls scheduler methods). The CLI-first workflow also paid off: having `main.py` prove the logic before touching the UI meant the UI wiring was almost trivial.
 
 **b. What you would improve**
 
-- If you had another iteration, what would you improve or redesign?
+I'd make the `Scheduler` honor each task's **preferred `time`** when building the plan instead of packing tasks back-to-back from a single `start_time` — right now the preferred time drives sorting and conflict detection but not placement. I'd also upgrade conflict detection to true **interval-overlap** checking and add input validation for time strings and durations.
 
 **c. Key takeaway**
 
-- What is one important thing you learned about designing systems or working with AI on this project?
+The biggest lesson was that **I'm the architect and the AI is the fast builder** — the design decisions (what classes exist, which constraints win, how much complexity is worth it) have to come from me, and the AI is most valuable when I give it well-scoped problems and then verify its output with tests and real runs rather than accepting it on faith.

@@ -1,0 +1,58 @@
+classDiagram
+    %% PawPal+ FINAL class diagram — matches pawpal_system.py after Phase 3.
+
+    class Owner {
+        +str name
+        +list~Pet~ pets
+        +dict preferences
+        +add_pet(pet) void
+        +add_task(pet, task) void
+        +all_tasks() list~Task~
+        +tasks_for_pet(pet_name) list~Task~
+    }
+
+    class Pet {
+        +str name
+        +str species
+        +list~Task~ tasks
+        +add_task(task) void
+        +remove_task(task) void
+    }
+
+    class Task {
+        +str description
+        +int duration_minutes
+        +str priority
+        +str time
+        +str frequency
+        +bool completed
+        +date due_date
+        +mark_complete() void
+        +priority_score() int
+        +next_occurrence() Task
+    }
+
+    class Scheduler {
+        +int available_minutes
+        +str start_time
+        +sort_by_time(tasks) list~Task~
+        +filter_by_status(tasks, completed) list~Task~
+        +detect_conflicts(tasks) list~str~
+        +complete_task(pet, task) Task
+        +build_plan(tasks) list~ScheduledItem~
+        +explain(plan) str
+    }
+
+    class ScheduledItem {
+        +Task task
+        +str start_time
+        +end_minutes() int
+        +end_time() str
+    }
+
+    Owner "1" --> "*" Pet : has
+    Pet "1" --> "*" Task : owns
+    Scheduler ..> Task : sorts / filters / schedules
+    Scheduler ..> Pet : reschedules recurring tasks
+    Scheduler ..> ScheduledItem : produces
+    ScheduledItem "*" --> "1" Task : wraps

@@ -12,6 +12,18 @@ A busy pet owner needs help staying consistent with pet care. They want an assis
 
 Your job is to design the system first (UML), then implement the logic in Python, then connect it to the Streamlit UI.
 
+## ✨ Features
+
+- **Owner & pet management** — create an owner and add multiple pets, each with their own care tasks.
+- **Rich tasks** — every task has a description, duration, priority, preferred time, and frequency.
+- **Priority-aware daily planning** — `Scheduler.build_plan()` orders tasks by priority (high first), then shortest duration, and packs them into a time budget, skipping what doesn't fit.
+- **Sorting by time** — `Scheduler.sort_by_time()` presents tasks chronologically by their `HH:MM` time (untimed tasks last).
+- **Filtering** — filter tasks by completion status (`Scheduler.filter_by_status()`) or by pet (`Owner.tasks_for_pet()`).
+- **Conflict warnings** — `Scheduler.detect_conflicts()` flags tasks scheduled at the same time and returns friendly warnings instead of crashing.
+- **Daily & weekly recurrence** — completing a recurring task auto-schedules its next occurrence (`Scheduler.complete_task()` + `Task.next_occurrence()`, using `timedelta`).
+- **Plan explanations** — `Scheduler.explain()` describes why the plan looks the way it does.
+- **Interactive Streamlit UI** — add pets/tasks, see conflict warnings, mark tasks complete, and generate a schedule, with all state persisted in `st.session_state`.
+
 ## What you will build
 
 Your final app should:
@@ -162,12 +174,68 @@ tasks (`frequency="once"`) return `None` and are not rescheduled.
 
 ## 📸 Demo Walkthrough
 
-Describe your app in numbered steps so a reader can follow along without watching a video:
+### Main UI features
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+Launch the app with `streamlit run app.py`. From top to bottom you can:
+
+- **Set the owner name** and **add pets** (name + species).
+- **Add tasks** to any pet — description, duration, priority, preferred time, and frequency (once / daily / weekly).
+- See **conflict warnings** appear automatically when two tasks share a start time.
+- Browse **each pet's tasks in a time-sorted table**.
+- **Mark a task complete** — recurring tasks instantly show their next scheduled date.
+- **Generate a daily schedule** for a given time budget and start time, with an explanation of the ordering.
+
+### Example workflow
+
+1. Enter the owner name (e.g. *Jordan*).
+2. **Add a pet:** "Rex", species *dog* → click **Add pet**.
+3. **Add a task:** for Rex, "Morning walk", 30 min, priority *high*, time `08:00`, frequency *daily* → **Add task**.
+4. **Add another task** at the same time (e.g. "Give meds" at `08:00`) → a **⚠️ conflict warning** appears for the 08:00 slot.
+5. **Mark "Morning walk" complete** → PawPal+ confirms completion and reports that the next daily occurrence is auto-scheduled for tomorrow.
+6. Set **Available minutes** (e.g. 120) and **Start time** (`08:00`), then click **Generate schedule** to see **Today's plan** as a table, plus a "Why this plan?" explanation.
+
+### Key Scheduler behaviors shown
+
+- **Sorting:** tasks display and schedule in chronological / priority order rather than insertion order.
+- **Conflict warnings:** exact same-time tasks are flagged before you build the plan.
+- **Recurrence:** completing a daily/weekly task rolls it forward automatically.
+- **Time-budget filtering:** tasks that don't fit the available minutes are skipped, and the UI notes how many were dropped.
+
+### Sample CLI output (`python main.py`)
+
+```
+Tasks sorted by time
+========================================
+07:30  Feed Mochi [high]
+08:00  Give Mochi meds [high]
+08:00  Morning walk [high]
+16:00  Play / enrichment [low]
+18:00  Evening walk [medium]
+
+Conflict check
+========================================
+⚠️  Conflict at 08:00: Give Mochi meds, Morning walk
+
+Recurring task rollover
+========================================
+Completed 'Morning walk' (done=True).
+Auto-created next 'Morning walk' due 2026-07-06.
+
+Outstanding (incomplete) tasks
+========================================
+[ ] Play / enrichment
+[ ] Feed Mochi
+[ ] Give Mochi meds
+[ ] Evening walk
+[ ] Morning walk
+
+Today's Schedule for Jordan
+========================================
+07:30-07:35  Give Mochi meds      ( 5 min) [high]
+07:35-07:45  Feed Mochi           (10 min) [high]
+07:45-08:15  Morning walk         (30 min) [high]
+08:15-08:40  Evening walk         (25 min) [medium]
+08:40-08:55  Play / enrichment    (15 min) [low]
+```
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->

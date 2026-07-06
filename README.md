@@ -83,21 +83,38 @@ Today's Schedule for Jordan
 
 ## 🧪 Testing PawPal+
 
-```bash
-# Run the full test suite:
-pytest
+Run the automated test suite from the project root:
 
-# Run with coverage:
+```bash
+python -m pytest
+
+# Or, with coverage:
 pytest --cov
 ```
 
-Sample test output:
+**What the tests cover** ([`tests/test_pawpal.py`](tests/test_pawpal.py)) — 11 tests spanning happy paths and edge cases:
+
+- **Task basics** — `mark_complete()` flips the completion flag; adding a task increases a pet's task count.
+- **Sorting correctness** — `sort_by_time()` returns tasks in chronological `HH:MM` order, with untimed tasks placed last.
+- **Filtering** — `filter_by_status()` returns only tasks matching a completion status.
+- **Conflict detection** — flags two tasks sharing the exact same time, and returns an empty list when all times are unique.
+- **Recurrence logic** — completing a `daily` task creates a new occurrence due the next day; a `weekly` task rolls forward 7 days; a one-off task is not rescheduled.
+- **Edge cases** — a pet with no tasks yields an empty plan (no crash); `build_plan()` drops tasks that exceed the available time budget.
+
+Successful test run:
 
 ```
-$ python -m pytest -q
-.......                                                                  [100%]
-7 passed in 0.01s
+$ python -m pytest
+============================= test session starts ==============================
+platform darwin -- Python 3.13.13, pytest-9.0.3, pluggy-1.6.0
+collected 11 items
+
+tests/test_pawpal.py ...........                                         [100%]
+
+============================== 11 passed in 0.02s ==============================
 ```
+
+**Confidence level: ★★★★☆ (4/5).** All core scheduling behaviors — sorting, filtering, recurrence, conflict detection, and time-budget handling — are covered by passing tests, including the key edge cases. It's held back from 5 stars because conflict detection only catches exact-time matches (not overlapping durations), and the recurrence tests are date-relative rather than covering month/year boundaries in depth.
 
 ## 📐 Smarter Scheduling
 

@@ -35,13 +35,15 @@ I added a **`ScheduledItem`** dataclass that wraps a `Task` with a concrete `sta
 
 **a. Constraints and priorities**
 
-- What constraints does your scheduler consider (for example: time, priority, preferences)?
-- How did you decide which constraints mattered most?
+The scheduler considers three constraints: a **time budget** (`available_minutes` for the day), **task priority** (high/medium/low), and each task's **duration**. When time is limited, `build_plan()` sorts by priority first (high tasks are placed before low ones) and then by shortest duration, so quick high-value tasks fit first and low-priority tasks are dropped if the budget runs out.
+
+I decided priority mattered most because the scenario is about a busy owner staying *consistent* with essential care — feeding and meds should never be skipped in favor of enrichment. Time is the hard limit, so it acts as the gate; duration is a tie-breaker that maximizes how many tasks fit.
 
 **b. Tradeoffs**
 
-- Describe one tradeoff your scheduler makes.
-- Why is that tradeoff reasonable for this scenario?
+My conflict detection only flags tasks with the **exact same "HH:MM" start time**, not overlapping durations. Two tasks at `08:00` are caught, but a 30-minute task at `08:00` and another at `08:15` are not, even though they overlap in real time.
+
+This is a reasonable tradeoff for this scenario: exact-match detection is trivial to reason about, runs in a single pass, and never produces false positives. A pet owner writing down preferred times will most often collide on round times ("both at 8am"), so it catches the common case cheaply. True interval-overlap detection would need parsed start/end times and pairwise comparison — worth it later, but over-engineered for a first pass where the goal is a lightweight warning rather than a hard guarantee.
 
 ---
 

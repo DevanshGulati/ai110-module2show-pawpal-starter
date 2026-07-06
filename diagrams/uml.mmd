@@ -8,6 +8,7 @@ classDiagram
         +add_pet(pet) void
         +add_task(pet, task) void
         +all_tasks() list~Task~
+        +tasks_for_pet(pet_name) list~Task~
     }
 
     class Pet {
@@ -25,13 +26,19 @@ classDiagram
         +str time
         +str frequency
         +bool completed
+        +date due_date
         +mark_complete() void
         +priority_score() int
+        +next_occurrence() Task
     }
 
     class Scheduler {
         +int available_minutes
         +str start_time
+        +sort_by_time(tasks) list~Task~
+        +filter_by_status(tasks, completed) list~Task~
+        +detect_conflicts(tasks) list~str~
+        +complete_task(pet, task) Task
         +build_plan(tasks) list~ScheduledItem~
         +explain(plan) str
     }

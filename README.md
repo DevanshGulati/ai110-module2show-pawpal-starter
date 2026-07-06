@@ -44,21 +44,41 @@ pip install -r requirements.txt
 
 ## 🖥️ Sample Output
 
-Paste a sample of your app's CLI or Streamlit output here so a reader can see what a generated plan looks like:
+Terminal output from running `python main.py`:
 
 ```
+Tasks sorted by time
+========================================
+07:30  Feed Mochi [high]
+08:00  Give Mochi meds [high]
+08:00  Morning walk [high]
+16:00  Play / enrichment [low]
+18:00  Evening walk [medium]
+
+Conflict check
+========================================
+⚠️  Conflict at 08:00: Give Mochi meds, Morning walk
+
+Recurring task rollover
+========================================
+Completed 'Morning walk' (done=True).
+Auto-created next 'Morning walk' due 2026-07-06.
+
+Outstanding (incomplete) tasks
+========================================
+[ ] Play / enrichment
+[ ] Feed Mochi
+[ ] Give Mochi meds
+[ ] Evening walk
+[ ] Morning walk
+
 Today's Schedule for Jordan
 ========================================
-07:30-07:40  Feed Mochi           (10 min) [high]
-07:40-08:10  Morning walk         (30 min) [high]
-08:10-08:35  Evening walk         (25 min) [medium]
-08:35-08:50  Play / enrichment    (15 min) [low]
-========================================
-Scheduled 4 task(s) using 80 of 120 available minutes, ordered by priority (high first), then shortest duration:
-  07:30-07:40  Feed Mochi (10 min) [priority: high]
-  07:40-08:10  Morning walk (30 min) [priority: high]
-  08:10-08:35  Evening walk (25 min) [priority: medium]
-  08:35-08:50  Play / enrichment (15 min) [priority: low]
+07:30-07:35  Give Mochi meds      ( 5 min) [high]
+07:35-07:45  Feed Mochi           (10 min) [high]
+07:45-08:15  Morning walk         (30 min) [high]
+08:15-08:40  Evening walk         (25 min) [medium]
+08:40-08:55  Play / enrichment    (15 min) [low]
 ```
 
 ## 🧪 Testing PawPal+
@@ -75,20 +95,18 @@ Sample test output:
 
 ```
 $ python -m pytest -q
-..                                                                       [100%]
-2 passed in 0.00s
+.......                                                                  [100%]
+7 passed in 0.01s
 ```
 
 ## 📐 Smarter Scheduling
 
-> Fill in once you've implemented scheduling logic.
-
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Task sorting | `Scheduler.sort_by_time()`, `Scheduler.build_plan()` | Sort by preferred `HH:MM` time (untimed last); the plan itself sorts by priority (high first), then shortest duration. |
+| Filtering | `Scheduler.filter_by_status()`, `Owner.tasks_for_pet()` | Filter by completion status, or by pet name. `build_plan()` also drops tasks that don't fit the time budget. |
+| Conflict handling | `Scheduler.detect_conflicts()` | Lightweight: returns warning strings for tasks sharing the exact same start time (does not crash). |
+| Recurring tasks | `Task.next_occurrence()`, `Scheduler.complete_task()` | Completing a `daily`/`weekly` task auto-creates the next occurrence via `timedelta` (today + 1 day / 7 days). |
 
 ## 📸 Demo Walkthrough
 
